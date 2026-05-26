@@ -101,6 +101,13 @@ export function SiteDataProvider({ children }) {
     console.log('✅ Gallery image deleted');
   }, []);
 
+  const fetchGalleryImages = useCallback(async () => {
+    // In demo mode, gallery images are loaded from localStorage on startup
+    setGalleryLoading(false);
+    setGalleryLoaded(true);
+    console.log('✅ Gallery images loaded');
+  }, []);
+
   const updateSponsors = useCallback(async (newSponsors) => {
     setSponsorsState(newSponsors);
     saveToStorage(STORAGE_KEYS.sponsors, newSponsors);
@@ -140,9 +147,7 @@ export function SiteDataProvider({ children }) {
     sponsors,
     updateSponsors,
     deleteSponsor,
-    tedxBoilerplate,
     resetToDefaults,
-    isSupabaseConfigured: isSupabaseConfigured(),
   };
 
   return (
