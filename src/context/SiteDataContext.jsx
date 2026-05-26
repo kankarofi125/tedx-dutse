@@ -6,6 +6,7 @@ import {
   ticketTiers as defaultTicketTiers,
   galleryImages as defaultGalleryImages,
   sponsors as defaultSponsors,
+  tedxBoilerplate,
 } from '../data/siteData';
 
 const STORAGE_KEYS = {
@@ -148,6 +149,7 @@ export function SiteDataProvider({ children }) {
     updateSponsors,
     deleteSponsor,
     resetToDefaults,
+    tedxBoilerplate,
   };
 
   return (
