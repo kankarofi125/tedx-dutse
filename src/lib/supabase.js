@@ -1,40 +1,90 @@
-import { createClient } from '@supabase/supabase-js';
+// Mock Supabase client for demo/frontend-only purposes
+// In production, replace this with a real Supabase client
 
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+class MockSupabaseClient {
+  auth = {
+    onAuthStateChange: (callback) => {
+      // Simulate initial session state
+      setTimeout(() => callback('INITIAL_SESSION', null), 100);
+      return { data: { subscription: { unsubscribe: () => {} } } };
+    },
+    signInWithPassword: async (credentials) => {
+      throw new Error('Authentication disabled in demo mode');
+    },
+    signOut: async () => {
+      return { error: null };
+    },
+  };
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase credentials not found. Please check your .env file.');
-  console.error('Required: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+  from(table) {
+    return {
+      select: () => this._mockSelect(table),
+      insert: (data) => this._mockInsert(table, data),
+      update: (data) => this._mockUpdate(table, data),
+      delete: () => this._mockDelete(table),
+      eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
+      order: () => ({
+        select: async () => ({ data: [], error: null }),
+        eq: async () => ({ data: null, error: null }),
+      }),
+    };
+  }
+
+  _mockSelect(table) {
+    return {
+      select: async () => ({ data: this._getMockData(table), error: null }),
+      eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
+      order: () => ({
+        select: async () => ({ data: this._getMockData(table), error: null }),
+        eq: async () => ({ data: null, error: null }),
+      }),
+      limit: (n) => ({
+        single: async () => ({ data: null, error: null }),
+        select: async () => ({ data: this._getMockData(table), error: null }),
+      }),
+    };
+  }
+
+  _mockInsert(table, data) {
+    return {
+      select: async () => ({
+        data: data[0],
+        single: async () => ({ data: data[0], error: null }),
+        error: null,
+      }),
+    };
+  }
+
+  _mockUpdate(table, data) {
+    return {
+      eq: () => ({
+        select: async () => ({ data: data, error: null }),
+      }),
+    };
+  }
+
+  _mockDelete(table) {
+    return {
+      eq: async () => ({ error: null }),
+    };
+  }
+
+  _getMockData(table) {
+    const mockData = {
+      site_config: [{ id: 1, name: 'TEDx Dutse' }],
+      speakers: [],
+      schedule: [],
+      ticket_tiers: [],
+      gallery_images: [],
+      sponsors: [],
+      tickets: [],
+      user_roles: [],
+    };
+    return mockData[table] || [];
+  }
 }
 
-// Create Supabase client
-// ──────────────────────────────────────────────────────────────────────────────
-// Chrome mobile fix:
-//   1. `lock` → no-op.  navigator.locks can deadlock when the tab is
-//      backgrounded/restored which is very common on mobile Chrome during a
-//      pull-to-refresh or manual URL-bar reload.
-//   2. `detectSessionInUrl: false` → we never do OAuth redirects, so skip the
-//      URL hash parsing step that can also race on slow connections.
-//   3. NO custom `global.fetch` timeout.  The previous `fetchWithTimeout` was
-//      aborting auth token-refresh requests before they completed, which left
-//      the SDK with no valid session.  Supabase already has its own built-in
-//      retry and timeout logic.
-// ──────────────────────────────────────────────────────────────────────────────
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    // No-op lock: prevents navigator.locks deadlocks on Chrome mobile
-    lock: async (_name, _acquireTimeout, fn) => {
-      return await fn();
-    },
-  },
-  // Removed custom fetchWithTimeout — it was aborting auth requests on mobile
-});
+export const supabase = new MockSupabaseClient();
 
 // Helper functions for database operations
 
